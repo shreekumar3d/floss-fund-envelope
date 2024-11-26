@@ -8,6 +8,7 @@ import sqlite3
 import sqlite3_adapters
 import argparse
 import sys
+import hashlib
 
 # This program assumes the sqlite3 db follows this schema:
 # sqlite> .schema mdb_history
@@ -58,6 +59,25 @@ def show_latest(conn, save_to):
     cursor.close()
 
 
+def show_all(conn):
+    cursor = conn.cursor()
+    qr = cursor.execute(
+        "SELECT last_modified, url, fetched_at, data FROM mdb_history ORDER BY last_modified ASC"
+    )
+    rec = qr.fetchone()
+    if not rec:
+        print("No records are available")
+    else:
+        while rec:
+            fetchedData = rec
+            print(f"Fetched at {dtformat(fetchedData[2])},")
+            print(f"  from {fetchedData[1]},")
+            print(f"   which was last modified at {dtformat(fetchedData[0])}")
+            print("   md5sum = ", hashlib.md5(fetchedData[3]).hexdigest())
+            rec = qr.fetchone()
+    cursor.close()
+
+
 parser = argparse.ArgumentParser()
 group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument("--update", action="store_true", help="Update from dir.floss.fund")
@@ -65,6 +85,11 @@ group.add_argument(
     "--show-latest",
     action="store_true",
     help="Show latest record stored in manifest history",
+)
+group.add_argument(
+    "--show-all",
+    action="store_true",
+    help="Show records stored in manifest history",
 )
 parser.add_argument(
     "--save-to",
@@ -88,5 +113,7 @@ if args.update:
     update_hist(url, conn)
 elif args.show_latest:
     show_latest(conn, args.save_to)
+elif args.show_all:
+    show_all(conn)
 
 conn.close()
