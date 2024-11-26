@@ -305,6 +305,8 @@ for idx, minfo in enumerate(mdesc):
         c_manifests += d_manifests
         c_projects += d_manifests
         c_mfr_total += d_mfr_total
+        c_mfr_total = math.floor(c_mfr_total)
+        d_mfr_total = math.floor(d_mfr_total)
         for key in d_etype:
             c_etype[key] += d_etype[key]
         c_manifests_above_ft += d_manifests_above_ft
@@ -339,7 +341,7 @@ for idx, minfo in enumerate(mdesc):
     d_etype[me_type] += 1
     if minfo["funding-plan-max"]["max_fr"] >= ft:
         d_manifests_above_ft += 1
-        d_mfr_total += minfo["funding-plan-max"]["max_fr"]
+    d_mfr_total += minfo["funding-plan-max"]["max_fr"]
     for key in d_fin_totals:
         d_fin_totals[key] += minfo["fin_totals"][key]
         c_fin_totals[key] += minfo["fin_totals"][key]
