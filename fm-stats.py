@@ -62,6 +62,12 @@ manifest_fin_count = {
     "expenses": 0,
     "taxes": 0,
 }
+
+# limitation on commercial use isn't "free" ?
+# just a flag for examination, not an argument to
+# consider/reject the manifest
+non_free_licenses = ["CC-BY-NC-SA-3.0"]
+
 for idx, row in enumerate(reader):
     if idx == 0:
         continue
@@ -88,16 +94,22 @@ for idx, row in enumerate(reader):
         "updated_at": updated_at,
         "manifest": manifest,
     }
+    nfl = 0
     for prj in manifest["projects"]:
         for lic in prj["licenses"]:
             # NOTE: potential validation bug
             # one project has a misspelled "sdpx" rather than "spdx"
             if lic.startswith("spdx:") or lic.startswith("sdpx:"):
                 lic = lic[5:]
+            elif lic.startswith("GNU:"):
+                lic = lic[4:]  # I see a GNU:AGPL-3.0
             if lic in lic_map:
                 lic_map[lic] += 1
             else:
                 lic_map[lic] = 1
+            if lic in non_free_licenses:
+                nfl += 1
+    this_mdesc["nfl"] = nfl
     # print(json.dumps(manifest, indent=2))
     plan_max = {}
     for plans in manifest["funding"]["plans"]:
@@ -224,6 +236,7 @@ for idx, minfo in enumerate(mdesc):
     mf = minfo["funding-plan-max"]["max_fr"]
     manifest = minfo["manifest"]
     print(idx + 1, minfo["url"])
+    print("  Non-free licences: ", minfo["nfl"])
     print("  Entity Type : ", manifest["entity"]["type"])
     print("  Max funding requested : ", mf)
     print("  Financial totals: ", minfo["fin_totals"])
@@ -231,3 +244,102 @@ for idx, minfo in enumerate(mdesc):
     if created_at != updated_at:
         diff = updated_at - created_at
         print("  Updated:", dtformat(updated_at), f"({diff})")
+
+# Compute, for every day
+# - incoming manifests
+# - entity type of incoming manifests
+# - additional projects
+# - cumulative funding stats
+
+# Compute, for every day since the launch of the FLOSS fund,
+#
+# Additional
+#   manifests, projects
+#   entity types (org/individual/group)
+#   manifests above funding threshold
+#
+# FIXME Right now, we do not consider scenarios where a manifest went
+# through a change in financial requirements. Not many days have
+# passed since launch, so this is a reasonable assumption to make.
+# Over a long term, changes to manifest would need to be tracked.
+mdesc.sort(key=lambda x: x["created_at"])
+
+# FLOSS fund was launched on 15th October 2024, nominally
+# 10 AM IST => UTC + 5:30.
+launch_dt = datetime.datetime(2024, 10, 15, 15, 30, tzinfo=datetime.UTC)
+day_since_launch = 0
+
+
+# d_ => daily
+# c_ => cumulative
+def reset_counters():
+    d_manifests = 0
+    d_projects = 0
+    d_etype = {"organisation": 0, "individual": 0, "group": 0}
+    d_manifests_above_ft = 0
+    d_fin_totals = {
+        "income": 0,
+        "expenses": 0,
+        "taxes": 0,
+    }
+    d_mfr_total = 0
+    return (
+        d_manifests,
+        d_projects,
+        d_etype,
+        d_fin_totals,
+        d_manifests_above_ft,
+        d_mfr_total,
+    )
+
+
+c_manifests, c_projects, c_etype, c_fin_totals, c_manifests_above_ft, c_mfr_total = (
+    reset_counters()
+)
+d_manifests, d_projects, d_etype, d_fin_totals, d_manifests_above_ft, d_mfr_total = (
+    reset_counters()
+)
+for idx, minfo in enumerate(mdesc):
+    tdiff = minfo["created_at"] - launch_dt
+    if (tdiff.days > day_since_launch) or (idx == len(mdesc) - 1):
+        c_manifests += d_manifests
+        c_projects += d_manifests
+        c_mfr_total += d_mfr_total
+        for key in d_etype:
+            c_etype[key] += d_etype[key]
+        c_manifests_above_ft += d_manifests_above_ft
+        # dump cumulative stats
+        print(f"Day {day_since_launch}:")
+        print("  New manifests:", d_manifests)
+        print("  New projects:", d_projects)
+        print("  New entity types:", d_etype)
+        print("  Manifests > funding threshold:", d_manifests_above_ft)
+        print("  Funding requested :", d_mfr_total)
+        print("  Additional financials:", d_fin_totals)
+        print("  Cumulative:")
+        print("    Manifests:", c_manifests)
+        print("    Projects:", c_projects)
+        print("    Entity types:", c_etype)
+        print("    Manifests > funding threshold:", c_manifests_above_ft)
+        print("    Funding requested :", c_mfr_total)
+        print("    Financials:", c_fin_totals)
+        (
+            d_manifests,
+            d_projects,
+            d_etype,
+            d_fin_totals,
+            d_manifests_above_ft,
+            d_mfr_total,
+        ) = reset_counters()
+        day_since_launch = tdiff.days
+    manifest = minfo["manifest"]
+    d_manifests += 1
+    d_projects += len(manifest["projects"])
+    me_type = manifest["entity"]["type"]
+    d_etype[me_type] += 1
+    if minfo["funding-plan-max"]["max_fr"] >= ft:
+        d_manifests_above_ft += 1
+        d_mfr_total += minfo["funding-plan-max"]["max_fr"]
+    for key in d_fin_totals:
+        d_fin_totals[key] += minfo["fin_totals"][key]
+        c_fin_totals[key] += minfo["fin_totals"][key]
