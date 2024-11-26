@@ -26,6 +26,7 @@ currency_weight = {
     "USD": 84.31,
     "EUR": 88.59,
     "CAD": 59.76,
+    "GBP": 105.82,
     "INR": 1,
 }
 
@@ -115,7 +116,9 @@ for idx, row in enumerate(reader):
     plan_max = {}
     for plans in manifest["funding"]["plans"]:
         freq = plans["frequency"]
-        amount = plans["amount"]
+        cmult = currency_weight[plans["currency"]] / currency_weight["USD"]
+        # Normalize fin totals to USD, as the FLOSS fund gives >= $$$$$ !
+        amount = plans["amount"] * cmult
         if freq in plan_max:
             plan_max[freq] = max(plan_max[freq], amount)
         else:
@@ -127,7 +130,7 @@ for idx, row in enumerate(reader):
         max_fr = max(plan_max["monthly"] * 12, max_fr)
     if "yearly" in plan_max:
         max_fr = max(plan_max["yearly"], max_fr)
-    plan_max["max_fr"] = max_fr
+    plan_max["max-fr"] = max_fr
     if max_fr >= ft:
         meets_ft += 1
     this_mdesc["funding-plan-max"] = plan_max
@@ -201,7 +204,7 @@ for year in annual_fin_totals:
         annual_fin_totals[year][key] = value
         fin_totals[key] += value
 
-mdesc.sort(key=lambda x: x["funding-plan-max"]["max_fr"], reverse=True)
+mdesc.sort(key=lambda x: x["funding-plan-max"]["max-fr"], reverse=True)
 print(f"Total manifests = {nr} Disabled = {disabled} Errors = {errors}")
 print(f"Manifests above funding threshold = {meets_ft}")
 print(f"Manifests requesting NO SPECIFIC (0) funding = {manifests_zfr}")
@@ -234,7 +237,7 @@ for idx, minfo in enumerate(mdesc):
         print()
     created_at = minfo["created_at"]
     updated_at = minfo["updated_at"]
-    mf = minfo["funding-plan-max"]["max_fr"]
+    mf = minfo["funding-plan-max"]["max-fr"]
     manifest = minfo["manifest"]
     print(idx + 1, minfo["url"])
     print("  Non-free licences: ", minfo["nfl"])
@@ -372,9 +375,9 @@ for idx, minfo in enumerate(mdesc):
     d_projects += len(manifest["projects"])
     me_type = manifest["entity"]["type"]
     d_etype[me_type] += 1
-    if minfo["funding-plan-max"]["max_fr"] >= ft:
+    if minfo["funding-plan-max"]["max-fr"] >= ft:
         d_manifests_above_ft += 1
-    d_mfr_total += minfo["funding-plan-max"]["max_fr"]
+    d_mfr_total += minfo["funding-plan-max"]["max-fr"]
     for key in d_fin_totals:
         d_fin_totals[key] += minfo["fin_totals"][key]
         c_fin_totals[key] += minfo["fin_totals"][key]
