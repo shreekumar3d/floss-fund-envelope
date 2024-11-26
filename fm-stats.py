@@ -13,6 +13,7 @@ import json
 from pprint import pprint
 import math
 import argparse
+import copy
 
 # FLOSS fund is looking to fund entities in the range
 # 10k - 100k.
@@ -299,6 +300,24 @@ c_manifests, c_projects, c_etype, c_fin_totals, c_manifests_above_ft, c_mfr_tota
 d_manifests, d_projects, d_etype, d_fin_totals, d_manifests_above_ft, d_mfr_total = (
     reset_counters()
 )
+
+# We'll save a timeseries for plotting
+timeseries = {
+    "t": [],  # day since launch
+    "d_manifests": [],
+    "d_projects": [],
+    "d_mfr_total": [],
+    "d_etype": [],
+    "d_manifests_above_ft": [],
+    "d_fin_totals": [],
+    "c_manifests": [],
+    "c_projects": [],
+    "c_mfr_total": [],
+    "c_etype": [],
+    "c_manifests_above_ft": [],
+    "c_fin_totals": [],
+}
+
 for idx, minfo in enumerate(mdesc):
     tdiff = minfo["created_at"] - launch_dt
     if (tdiff.days > day_since_launch) or (idx == len(mdesc) - 1):
@@ -310,6 +329,20 @@ for idx, minfo in enumerate(mdesc):
         for key in d_etype:
             c_etype[key] += d_etype[key]
         c_manifests_above_ft += d_manifests_above_ft
+        # save in time series
+        timeseries["t"].append(day_since_launch)
+        timeseries["d_manifests"].append(copy.copy(d_manifests))
+        timeseries["d_projects"].append(copy.copy(d_projects))
+        timeseries["d_mfr_total"].append(copy.copy(d_mfr_total))
+        timeseries["d_etype"].append(copy.copy(d_etype))
+        timeseries["d_manifests_above_ft"].append(d_manifests_above_ft)
+        timeseries["d_fin_totals"].append(d_fin_totals)
+        timeseries["c_manifests"].append(copy.copy(c_manifests))
+        timeseries["c_projects"].append(copy.copy(c_projects))
+        timeseries["c_mfr_total"].append(copy.copy(c_mfr_total))
+        timeseries["c_etype"].append(copy.copy(c_etype))
+        timeseries["c_manifests_above_ft"].append(c_manifests_above_ft)
+        timeseries["c_fin_totals"].append(c_fin_totals)
         # dump cumulative stats
         print(f"Day {day_since_launch}:")
         print("  New manifests:", d_manifests)
@@ -345,3 +378,43 @@ for idx, minfo in enumerate(mdesc):
     for key in d_fin_totals:
         d_fin_totals[key] += minfo["fin_totals"][key]
         c_fin_totals[key] += minfo["fin_totals"][key]
+
+# fill holes in the timeseries. Not on every day may new manifests be submitted.
+# On a day where d_ values don't change, they must be set to 0
+ts2 = copy.deepcopy(timeseries)
+for idx, (start, end) in enumerate(zip(timeseries["t"][:-1], timeseries["t"][1:])):
+    if end > start + 1:
+        # we have no action for one or more days
+        # print(start, end)
+        for di in range(end - start - 1):
+            this_idx = start + di + 1
+            ts2["t"].insert(this_idx, this_idx)
+            for key in [
+                "manifests",
+                "projects",
+                "mfr_total",
+                "etype",
+                "manifests_above_ft",
+                "fin_totals",
+            ]:
+                key_name = f"c_{key}"
+                ts2[key_name].insert(this_idx, timeseries[key_name][idx])
+            (
+                d_manifests,
+                d_projects,
+                d_etype,
+                d_fin_totals,
+                d_manifests_above_ft,
+                d_mfr_total,
+            ) = reset_counters()
+            ts2["d_manifests"].insert(this_idx, d_manifests)
+            ts2["d_projects"].insert(this_idx, d_projects)
+            ts2["d_etype"].insert(this_idx, d_etype)
+            ts2["d_fin_totals"].insert(this_idx, d_fin_totals)
+            ts2["d_manifests_above_ft"].insert(this_idx, d_manifests_above_ft)
+            ts2["d_mfr_total"].insert(this_idx, d_mfr_total)
+
+# Done expanding, so rename
+timeseries = ts2
+del ts2
+# pprint(timeseries)
