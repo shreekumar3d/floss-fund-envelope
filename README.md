@@ -1,2 +1,4 @@
 # floss-funding-envelope
-A project to collect and analyse FLOSS funding related data 
+
+This project collects and analyses FLOSS funding related data from
+[dir.floss.fund](https://dir.floss.fund/).
