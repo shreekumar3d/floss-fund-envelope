@@ -322,7 +322,7 @@ for idx, minfo in enumerate(mdesc):
     tdiff = minfo["created_at"] - launch_dt
     if (tdiff.days > day_since_launch) or (idx == len(mdesc) - 1):
         c_manifests += d_manifests
-        c_projects += d_manifests
+        c_projects += d_projects
         c_mfr_total += d_mfr_total
         c_mfr_total = math.floor(c_mfr_total)
         d_mfr_total = math.floor(d_mfr_total)
