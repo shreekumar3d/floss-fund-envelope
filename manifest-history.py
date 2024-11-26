@@ -39,10 +39,10 @@ def update_hist(url, conn):
     cursor.close()
 
 
-def show_latest(conn):
+def show_latest(conn, save_to):
     cursor = conn.cursor()
     qr = cursor.execute(
-        "SELECT last_modified, url, fetched_at FROM mdb_history ORDER BY last_modified ASC"
+        "SELECT last_modified, url, fetched_at, data FROM mdb_history ORDER BY last_modified ASC"
     )
     fetchedData = qr.fetchone()
     if not fetchedData:
@@ -51,6 +51,10 @@ def show_latest(conn):
         print(f"Last recorded manifest db was fetched at {dtformat(fetchedData[2])},")
         print(f"from {fetchedData[1]},")
         print(f"which was last modified at {dtformat(fetchedData[0])}")
+        if save_to:
+            print(f"Saving {fetchedData[1]} to {save_to}...")
+            with open(save_to, "wb") as fp:
+                fp.write(fetchedData[3])
     cursor.close()
 
 
@@ -62,8 +66,16 @@ group.add_argument(
     action="store_true",
     help="Show latest record stored in manifest history",
 )
+parser.add_argument(
+    "--save-to",
+    metavar="FILENAME",
+    help="Save data to this file, use with --show-latest",
+)
 args = parser.parse_args()
 
+if args.save_to and not args.show_latest:
+    print("ERROR: --save-to may only be used with --show-latest")
+    sys.exit(1)
 sqlite3_adapters.register_datetime()
 # funding-manifests-evolution is a separate git repository
 conn = sqlite3.connect(
@@ -75,6 +87,6 @@ if args.update:
     url = "https://dir.floss.fund/funding-manifests.tar.gz"
     update_hist(url, conn)
 elif args.show_latest:
-    show_latest(conn)
+    show_latest(conn, args.save_to)
 
 conn.close()
