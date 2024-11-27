@@ -14,6 +14,7 @@ from pprint import pprint
 import math
 import argparse
 import copy
+import string
 
 # FLOSS fund is looking to fund entities in the range
 # 10k - 100k.
@@ -70,6 +71,9 @@ manifest_fin_count = {
 # consider/reject the manifest
 non_free_licenses = ["CC-BY-NC-SA-3.0"]
 
+# usage count for every tag used in projects
+tag_count = {}
+
 for idx, row in enumerate(reader):
     if idx == 0:
         continue
@@ -96,8 +100,15 @@ for idx, row in enumerate(reader):
         "updated_at": updated_at,
         "manifest": manifest,
     }
+
     nfl = 0
     for prj in manifest["projects"]:
+        for tag in prj["tags"]:
+            if tag in tag_count:
+                tag_count[tag] += 1
+            else:
+                tag_count[tag] = 1
+
         for lic in prj["licenses"]:
             # NOTE: potential validation bug
             # one project has a misspelled "sdpx" rather than "spdx"
@@ -421,3 +432,18 @@ for idx, (start, end) in enumerate(zip(timeseries["t"][:-1], timeseries["t"][1:]
 timeseries = ts2
 del ts2
 # pprint(timeseries)
+
+# Show info for tags.
+# project-tags.txt is a copy of https://floss.fund/static/project-tags.txt
+known_tags = [x.strip() for x in open("project-tags.txt", "r").readlines()]
+used_tags = list(tag_count.keys())
+unused_tags = []
+for tag in known_tags:
+    if tag not in used_tags:
+        unused_tags.append(tag)
+tc_list = list(zip(tag_count.keys(), tag_count.values()))
+tc_list.sort(key=lambda x: x[1], reverse=True)
+print("Used tags, and their frequencies are:")
+pprint(tc_list)
+print("These tags (suggested by floss.fund) are NOT used by any project:")
+pprint(unused_tags)
