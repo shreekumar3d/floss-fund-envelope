@@ -15,6 +15,9 @@ import math
 import argparse
 import copy
 import string
+import wordcloud
+from PIL import Image
+import numpy as np
 
 # FLOSS fund is looking to fund entities in the range
 # 10k - 100k.
@@ -490,3 +493,17 @@ print("Used tags, and their frequencies are:")
 pprint(tc_list)
 print("These tags (suggested by floss.fund) are NOT used by any project:")
 pprint(unused_tags)
+
+# Generate word cloud with tags
+
+# One with the floss flower mask
+floss_mask = np.array(Image.open("images/mask-floss-fund-logo.png"))
+wc = wordcloud.WordCloud(
+    background_color="white", mask=floss_mask, contour_width=5, contour_color="#2ea650"
+)
+wc.fit_words(tag_count)
+wc.to_file("floss_fund_tags.png")
+
+# One for "unused" tags. These all have count=1
+wc2 = wordcloud.WordCloud(background_color="white").generate(" ".join(unused_tags))
+wc2.to_file("unused_tags.png")
