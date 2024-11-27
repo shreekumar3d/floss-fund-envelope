@@ -57,7 +57,7 @@ etype_proj_count = {}
 etype_max_fr = {}
 lic_map = {}
 annual_fin_totals = {}
-fh_currencies = {}
+used_currencies = []
 
 ft_keys = ["income", "expenses", "taxes"]
 manifest_fin_count = {
@@ -80,6 +80,7 @@ for idx, row in enumerate(reader):
     nr += 1
     rid, url, created_at, updated_at, status, manifest_json = row
     if status != "active":
+        print(status, url)
         disabled += 1
         continue
     try:
@@ -127,7 +128,10 @@ for idx, row in enumerate(reader):
     plan_max = {}
     for plans in manifest["funding"]["plans"]:
         freq = plans["frequency"]
-        cmult = currency_weight[plans["currency"]] / currency_weight["USD"]
+        currency = plans["currency"]
+        cmult = currency_weight[currency] / currency_weight["USD"]
+        if currency not in used_currencies:
+            used_currencies.append(currency)
         # Normalize fin totals to USD, as the FLOSS fund gives >= $$$$$ !
         amount = plans["amount"] * cmult
         if freq in plan_max:
@@ -185,15 +189,17 @@ for idx, row in enumerate(reader):
                     "taxes": 0,
                 }
             # Normalize fin totals to USD, as the FLOSS fund gives >= $$$$$ !
+            currency = hist["currency"]
+            if currency not in used_currencies:
+                used_currencies.append(currency)
             c_weight = (
-                currency_weight[hist["currency"]] / currency_weight["USD"]
+                currency_weight[currency] / currency_weight["USD"]
             )  # required field
             for key in ft_keys:
                 if key in hist:
                     value = hist[key] * c_weight
                     annual_fin_totals[year][key] += value
                     fin_totals[key] += value
-            fh_currencies[hist["currency"]] = 1
         for key in ft_keys:
             if fin_totals[key] > 0:
                 manifest_fin_count[key] += 1
@@ -237,7 +243,7 @@ print("Annual Financial Totals:")
 pprint(annual_fin_totals)
 print("Finances Reported by entities:")
 pprint(manifest_fin_count)
-print("Currencies:", list(fh_currencies.keys()))
+print("Currencies:", used_currencies)
 print()
 print(f"-- Manifests above funding threshold {ft//1000}k USD --")
 print()
@@ -298,6 +304,7 @@ def reset_counters():
         "taxes": 0,
     }
     d_mfr_total = 0
+    d_currencies = []
     return (
         d_manifests,
         d_projects,
@@ -305,15 +312,28 @@ def reset_counters():
         d_fin_totals,
         d_manifests_above_ft,
         d_mfr_total,
+        d_currencies,
     )
 
 
-c_manifests, c_projects, c_etype, c_fin_totals, c_manifests_above_ft, c_mfr_total = (
-    reset_counters()
-)
-d_manifests, d_projects, d_etype, d_fin_totals, d_manifests_above_ft, d_mfr_total = (
-    reset_counters()
-)
+(
+    c_manifests,
+    c_projects,
+    c_etype,
+    c_fin_totals,
+    c_manifests_above_ft,
+    c_mfr_total,
+    c_currencies,
+) = reset_counters()
+(
+    d_manifests,
+    d_projects,
+    d_etype,
+    d_fin_totals,
+    d_manifests_above_ft,
+    d_mfr_total,
+    d_currencies,
+) = reset_counters()
 
 # We'll save a timeseries for plotting
 timeseries = {
@@ -324,12 +344,14 @@ timeseries = {
     "d_etype": [],
     "d_manifests_above_ft": [],
     "d_fin_totals": [],
+    "d_currencies": [],
     "c_manifests": [],
     "c_projects": [],
     "c_mfr_total": [],
     "c_etype": [],
     "c_manifests_above_ft": [],
     "c_fin_totals": [],
+    "c_currencies": [],
 }
 
 for idx, minfo in enumerate(mdesc):
@@ -340,6 +362,10 @@ for idx, minfo in enumerate(mdesc):
         c_mfr_total += d_mfr_total
         c_mfr_total = math.floor(c_mfr_total)
         d_mfr_total = math.floor(d_mfr_total)
+        d_currencies.sort()
+        for currency in d_currencies:
+            if currency not in c_currencies:
+                c_currencies.append(currency)
         for key in d_etype:
             c_etype[key] += d_etype[key]
         c_manifests_above_ft += d_manifests_above_ft
@@ -351,12 +377,14 @@ for idx, minfo in enumerate(mdesc):
         timeseries["d_etype"].append(copy.copy(d_etype))
         timeseries["d_manifests_above_ft"].append(d_manifests_above_ft)
         timeseries["d_fin_totals"].append(d_fin_totals)
+        timeseries["d_currencies"].append(d_currencies)
         timeseries["c_manifests"].append(copy.copy(c_manifests))
         timeseries["c_projects"].append(copy.copy(c_projects))
         timeseries["c_mfr_total"].append(copy.copy(c_mfr_total))
         timeseries["c_etype"].append(copy.copy(c_etype))
         timeseries["c_manifests_above_ft"].append(c_manifests_above_ft)
         timeseries["c_fin_totals"].append(c_fin_totals)
+        timeseries["c_currencies"].append(c_currencies)
         # dump cumulative stats
         print(f"Day {day_since_launch}:")
         print("  New manifests:", d_manifests)
@@ -365,6 +393,7 @@ for idx, minfo in enumerate(mdesc):
         print("  Manifests > funding threshold:", d_manifests_above_ft)
         print("  Funding requested :", d_mfr_total)
         print("  Additional financials:", d_fin_totals)
+        print("  Currencies used:", d_currencies)
         print("  Cumulative:")
         print("    Manifests:", c_manifests)
         print("    Projects:", c_projects)
@@ -372,6 +401,7 @@ for idx, minfo in enumerate(mdesc):
         print("    Manifests > funding threshold:", c_manifests_above_ft)
         print("    Funding requested :", c_mfr_total)
         print("    Financials:", c_fin_totals)
+        print("    Currencies used:", c_currencies)
         (
             d_manifests,
             d_projects,
@@ -379,6 +409,7 @@ for idx, minfo in enumerate(mdesc):
             d_fin_totals,
             d_manifests_above_ft,
             d_mfr_total,
+            d_currencies,
         ) = reset_counters()
         day_since_launch = tdiff.days
     manifest = minfo["manifest"]
@@ -392,7 +423,15 @@ for idx, minfo in enumerate(mdesc):
     for key in d_fin_totals:
         d_fin_totals[key] += minfo["fin_totals"][key]
         c_fin_totals[key] += minfo["fin_totals"][key]
-
+    for plans in manifest["funding"]["plans"]:
+        currency = plans["currency"]
+        if currency not in d_currencies:
+            d_currencies.append(currency)
+    if "history" in manifest["funding"] and manifest["funding"]["history"]:
+        for hist in manifest["funding"]["history"]:
+            currency = hist["currency"]
+            if currency not in d_currencies:
+                d_currencies.append(currency)
 # fill holes in the timeseries. Not on every day may new manifests be submitted.
 # On a day where d_ values don't change, they must be set to 0
 ts2 = copy.deepcopy(timeseries)
@@ -410,6 +449,7 @@ for idx, (start, end) in enumerate(zip(timeseries["t"][:-1], timeseries["t"][1:]
                 "etype",
                 "manifests_above_ft",
                 "fin_totals",
+                "currencies",
             ]:
                 key_name = f"c_{key}"
                 ts2[key_name].insert(this_idx, timeseries[key_name][idx])
@@ -420,6 +460,7 @@ for idx, (start, end) in enumerate(zip(timeseries["t"][:-1], timeseries["t"][1:]
                 d_fin_totals,
                 d_manifests_above_ft,
                 d_mfr_total,
+                d_currencies,
             ) = reset_counters()
             ts2["d_manifests"].insert(this_idx, d_manifests)
             ts2["d_projects"].insert(this_idx, d_projects)
@@ -427,6 +468,7 @@ for idx, (start, end) in enumerate(zip(timeseries["t"][:-1], timeseries["t"][1:]
             ts2["d_fin_totals"].insert(this_idx, d_fin_totals)
             ts2["d_manifests_above_ft"].insert(this_idx, d_manifests_above_ft)
             ts2["d_mfr_total"].insert(this_idx, d_mfr_total)
+            ts2["d_currencies"].insert(this_idx, d_currencies)
 
 # Done expanding, so rename
 timeseries = ts2
