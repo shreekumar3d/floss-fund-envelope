@@ -250,7 +250,7 @@ for idx, minfo in enumerate(mdesc):
     updated_at = minfo["updated_at"]
     mf = minfo["funding-plan-max"]["max-fr"]
     manifest = minfo["manifest"]
-    print(idx + 1, minfo["url"])
+    print(idx + 1, minfo["url"], f"(Project ID: {minfo['id']})")
     print("  Non-free licences: ", minfo["nfl"])
     print("  Entity Type : ", manifest["entity"]["type"])
     print("  Max funding requested : ", mf)
