@@ -4,6 +4,21 @@
 #
 # Extract and dump useful stats from funding-manifest.csv file
 #
+#
+# To use this:
+#
+# 1. Get manifest database from dir.floss.net
+#    (https://dir.floss.fund/funding-manifests.tar.gz)
+#    or using these steps:
+#    a. clone https://github.com/shreekumar3d/funding-manifests-evolution
+#    b. ./manifest-history.py --show-latest --save-to funding-manifest.tar.gz
+#
+# 2. Extract it to some directory, e.g. "data"
+# 3. Run this tool : ./fm-stats.py data/funding-manifests.csv
+#
+# To generate plots and charts, checkout args using --help or below.
+# Note that there is an element of randomness in the word clouds.
+#
 
 import csv
 import datetime
@@ -292,6 +307,7 @@ for ename in mdesc_by_ename:
 mdesc_by_ename = mdn
 
 mdesc.sort(key=lambda x: x["funding-plan-max"]["max-fr"], reverse=True)
+print("==============================================================")
 print(f"Total manifests = {nr} Disabled = {disabled} Errors = {errors}")
 print(f"Manifests above funding threshold = {meets_ft}")
 print(f"Manifests requesting NO SPECIFIC (0) funding = {manifests_zfr}")
@@ -315,7 +331,6 @@ print("Finances Reported by entities:")
 pprint(manifest_fin_count)
 used_currencies.sort()
 print("Currencies:", used_currencies)
-print(used_currencies)
 print()
 print("Cumulative funding requested, by currency, in USD:")
 pprint(cur_fr)
@@ -443,6 +458,9 @@ timeseries = {
     "c_currencies": [],
 }
 
+print("=========================================================")
+print("Trends from T=0...")
+print("=========================================================")
 for idx, minfo in enumerate(mdesc):
     tdiff = minfo["created_at"] - launch_dt
     if (tdiff.days > day_since_launch) or (idx == len(mdesc) - 1):
