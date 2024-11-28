@@ -507,11 +507,13 @@ for idx, minfo in enumerate(mdesc):
 # fill holes in the timeseries. Not on every day may new manifests be submitted.
 # On a day where d_ values don't change, they must be set to 0
 ts2 = copy.deepcopy(timeseries)
+inaction_days = 0
 for idx, (start, end) in enumerate(zip(timeseries["t"][:-1], timeseries["t"][1:])):
     if end > start + 1:
         # we have no action for one or more days
         # print(start, end)
         for di in range(end - start - 1):
+            inaction_days += 1
             this_idx = start + di + 1
             ts2["t"].insert(this_idx, this_idx)
             for key in [
@@ -541,6 +543,8 @@ for idx, (start, end) in enumerate(zip(timeseries["t"][:-1], timeseries["t"][1:]
             ts2["d_manifests_above_ft"].insert(this_idx, d_manifests_above_ft)
             ts2["d_mfr_total"].insert(this_idx, d_mfr_total)
             ts2["d_currencies"].insert(this_idx, d_currencies)
+
+print('Days where no entities joined in the action:', inaction_days)
 
 # Done expanding, so rename
 timeseries = ts2
