@@ -81,6 +81,11 @@ tag_count = {}
 # multi-currency projects, an indicator of wider collaboration
 mc_projects = []
 
+# entity with the same name can submit multiple manifests.
+# let's figure out who. It's a wide world, so names may match.
+# Don't claim similarity, unless verified by other means
+mdesc_by_ename = {}
+
 for idx, row in enumerate(reader):
     # Skip the header
     if idx == 0:
@@ -170,6 +175,11 @@ for idx, row in enumerate(reader):
 
     mdesc.append(this_mdesc)
 
+    ename = manifest["entity"]["name"]
+    if ename not in mdesc_by_ename:
+        mdesc_by_ename[ename] = []
+    mdesc_by_ename[ename].append(this_mdesc)
+
     # Update stats
     npc = len(manifest_currencies)
     primary_cur = manifest_currencies[0]
@@ -252,6 +262,13 @@ for year in annual_fin_totals:
         annual_fin_totals[year][key] = value
         fin_totals[key] += value
 
+mdn = copy.copy(mdesc_by_ename)
+for ename in mdesc_by_ename:
+    mdesc_list = mdesc_by_ename[ename]
+    if len(mdesc_list) == 1:
+        mdn.pop(ename)
+mdesc_by_ename = mdn
+
 mdesc.sort(key=lambda x: x["funding-plan-max"]["max-fr"], reverse=True)
 print(f"Total manifests = {nr} Disabled = {disabled} Errors = {errors}")
 print(f"Manifests above funding threshold = {meets_ft}")
@@ -288,6 +305,12 @@ for mcp in mc_projects:
     ename = manifest["entity"]["name"]
     max_fr = math.floor(emdesc["funding-plan-max"]["max-fr"])
     print(f"  {mcp['currencies']} {url} {ename} {max_fr}")
+print("Entities with more than 1 project:")
+for ename in mdesc_by_ename:
+    print(f"  {ename}")
+    for emdesc in mdesc_by_ename[ename]:
+        url = emdesc["url"]
+        print(f"    {url}")
 print()
 print(f"-- Manifests above funding threshold {ft//1000}k USD --")
 print()
