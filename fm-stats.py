@@ -35,11 +35,12 @@ from PIL import Image
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-
+import statistics
 
 # FLOSS fund is looking to fund entities in the range
 # 10k - 100k.
-ft = 10000  # 10k USD min
+ft = 10 * 1000  # 10k USD min
+fmax = 100 * 1000
 
 # Currency conversion as of 26 Nov 2024
 # This isn't correct either for the past, or for
@@ -67,6 +68,9 @@ parser.add_argument(
 parser.add_argument("--word-cloud", action="store_true", help="Generate word clouds")
 parser.add_argument(
     "--funding-trend", action="store_true", help="Plot funding trend (line+bar)"
+)
+parser.add_argument(
+    "--funding-bar", action="store_true", help="Plot funding bars (projects in range)"
 )
 args = parser.parse_args()
 
@@ -306,7 +310,57 @@ for ename in mdesc_by_ename:
         mdn.pop(ename)
 mdesc_by_ename = mdn
 
+# list of funding requests, clipped to the range (10-100k)
+# source : https://www.rapidtables.com/web/color/purple-color.html
+b1_color = "#E6E6FA"  # 0.  lavender
+cmap = [
+    "#D8BFD8",  # 10.   thistle
+    "#DDA0DD",  # 20.  plum
+    "#EE82EE",  # 30.  violet
+    "#DA70D6",  # 40.  orchid
+    "#BA55D3",  # 50.  medium orchid
+    "#8A2BE2",  # 60.  blue violet
+    "#9932CC",  # 70.  dark orchid
+    "#8B008B",  # 80.  dark magenta
+    "#800080",  # 90.  Purple
+    "#4B0082",  # 100. Indigo
+]
+
+
+def val2color(fr):
+    idx = ((fr - ft) / (fmax - ft)) * (len(cmap) - 1)
+    idx = math.floor(idx)
+    return cmap[idx]
+
+
+clipped_colors = []
+ety_clipped_funding = []
+fr_below_ft = []
+ety_clipped_sum = 0
+for minfo in mdesc:
+    max_fr = minfo["funding-plan-max"]["max-fr"]
+    if max_fr >= ft:
+        max_fr = min(max_fr, fmax)
+        ety_clipped_funding.append(max_fr)
+    elif max_fr > 0:
+        # accumulate values below 10k in one bucket
+        fr_below_ft.append(max_fr)
+        # we ignore 0 as we can't meaningfully process it
+        # here
+    ety_clipped_sum += max_fr
+
+ety_clipped_funding.sort()
+ety_clipped_colors = [val2color(x) for x in ety_clipped_funding]
+
+# bucket1 = statistics.mean(fr_below_ft)
+print("Entities below lower threshold = ", len(fr_below_ft))
+bucket1 = sum(fr_below_ft)
+ety_clipped_funding.insert(0, bucket1)
+ety_clipped_colors.insert(0, b1_color)
+
+# Highest funding requirements float to the top!
 mdesc.sort(key=lambda x: x["funding-plan-max"]["max-fr"], reverse=True)
+
 print("==============================================================")
 print(f"Total manifests = {nr} Disabled = {disabled} Errors = {errors}")
 print(f"Manifests above funding threshold = {meets_ft}")
@@ -658,4 +712,18 @@ if args.funding_trend:
     # p1_t[['d_manifests', 'd_projects']].plot(kind='bar')
     p1_t[["d_manifests"]].plot(kind="bar")
     p1_t["c_mfr_total"].plot(secondary_y=True, color="red")
+    plt.show()
+
+# Bar plot
+if args.funding_bar:
+    fund_sum = 0
+    for idx, val in enumerate(ety_clipped_funding):
+        percentage = math.floor((fund_sum / ety_clipped_sum) * 100)
+        print(idx, val, 100 - percentage)
+        fund_sum += val
+    print(ety_clipped_sum)
+    # Area plot
+    y = ety_clipped_funding
+    x = range(len(y))
+    plt.bar(x, y, color=ety_clipped_colors)
     plt.show()
