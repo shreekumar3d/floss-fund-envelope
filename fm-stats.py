@@ -48,6 +48,7 @@ parser.add_argument(
 parser.add_argument(
     "--funding-pie", action="store_true", help="Show funding split as a pie-chart"
 )
+parser.add_argument("--word-cloud", action="store_true", help="Generate word clouds")
 args = parser.parse_args()
 
 csvfile = open(args.manifest, encoding="utf-8")
@@ -91,6 +92,11 @@ mc_projects = []
 # Don't claim similarity, unless verified by other means
 mdesc_by_ename = {}
 
+# Map of project names to a "count"
+# It's a wide world, so name clashes may happen. We'll use this
+# to create a tag cloud
+prj_map = {}
+
 for idx, row in enumerate(reader):
     # Skip the header
     if idx == 0:
@@ -126,6 +132,13 @@ for idx, row in enumerate(reader):
     nfl = 0  # non-free-licenses
 
     for prj in manifest["projects"]:
+
+        prj_name = prj["name"]
+        if prj_name not in prj_map:
+            prj_map[prj_name] = 1
+        else:
+            prj_map[prj_name] += 1
+
         for tag in prj["tags"]:
             if tag in tag_count:
                 tag_count[tag] += 1
@@ -544,7 +557,7 @@ for idx, (start, end) in enumerate(zip(timeseries["t"][:-1], timeseries["t"][1:]
             ts2["d_mfr_total"].insert(this_idx, d_mfr_total)
             ts2["d_currencies"].insert(this_idx, d_currencies)
 
-print('Days where no entities joined in the action:', inaction_days)
+print("Days where no entities joined in the action:", inaction_days)
 
 # Done expanding, so rename
 timeseries = ts2
@@ -555,10 +568,10 @@ del ts2
 # project-tags.txt is a copy of https://floss.fund/static/project-tags.txt
 known_tags = [x.strip() for x in open("project-tags.txt", "r").readlines()]
 used_tags = list(tag_count.keys())
-unused_tags = []
+unused_tags = {}
 for tag in known_tags:
     if tag not in used_tags:
-        unused_tags.append(tag)
+        unused_tags[tag] = 1
 tc_list = list(zip(tag_count.keys(), tag_count.values()))
 tc_list.sort(key=lambda x: x[1], reverse=True)
 print("Used tags, and their frequencies are:")
@@ -567,17 +580,28 @@ print("These tags (suggested by floss.fund) are NOT used by any project:")
 pprint(unused_tags)
 
 # Generate word cloud with tags
-# One with the floss flower mask
-floss_mask = np.array(Image.open("images/mask-floss-fund-logo.png"))
-wc = wordcloud.WordCloud(
-    background_color="white", mask=floss_mask, contour_width=5, contour_color="#2ea650"
-)
-wc.fit_words(tag_count)
-wc.to_file("floss_fund_tags.png")
+if args.word_cloud:
+    # One with the floss flower mask
+    floss_mask = np.array(Image.open("images/mask-floss-fund-logo.png"))
+    wc = wordcloud.WordCloud(
+        background_color="white",
+        mask=floss_mask,
+        contour_width=5,
+        contour_color="#2ea650",
+    )
+    wc.fit_words(tag_count)
+    wc.to_file("floss_fund_tags.png")
 
-# One for "unused" tags. These all have count=1
-wc2 = wordcloud.WordCloud(background_color="white").generate(" ".join(unused_tags))
-wc2.to_file("unused_tags.png")
+    # One for "unused" tags. These all have count=1
+    wc2 = wordcloud.WordCloud(background_color="white", width=400, height=400)
+    wc2.fit_words(unused_tags)
+    wc2.to_file("unused_tags.png")
+
+    # One for "unused" tags. These all have count=1
+    print("No of projects = ", len(prj_map))
+    wc3 = wordcloud.WordCloud(background_color="white", width=1920, height=1280)
+    wc3.fit_words(prj_map)
+    wc3.to_file("floss_projects.png")
 
 # Pie chart
 if args.funding_pie:
