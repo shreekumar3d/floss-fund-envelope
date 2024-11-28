@@ -61,6 +61,7 @@ etype_max_fr = {}
 lic_map = {}
 annual_fin_totals = {}
 used_currencies = []
+cur_fr = {}
 
 ft_keys = ["income", "expenses", "taxes"]
 manifest_fin_count = {
@@ -77,17 +78,25 @@ non_free_licenses = ["CC-BY-NC-SA-3.0"]
 # usage count for every tag used in projects
 tag_count = {}
 
+# multi-currency projects, an indicator of wider collaboration
+mc_projects = []
+
 for idx, row in enumerate(reader):
+    # Skip the header
     if idx == 0:
         continue
+
     nr += 1
     rid, url, created_at, updated_at, status, manifest_json = row
+
     if status != "active":
         print(status, url)
         disabled += 1
         continue
+
     try:
         manifest = json.loads(manifest_json)
+        # print(json.dumps(manifest, indent=2))
     except json.decoder.JSONDecodeError as err:
         print(f"At row={rid}, error:{err}")
         errors += 1
@@ -95,7 +104,6 @@ for idx, row in enumerate(reader):
 
     created_at = dateutil.parser.parse(created_at, fuzzy=True)
     updated_at = dateutil.parser.parse(updated_at, fuzzy=True)
-
     this_mdesc = {
         "id": rid,
         "url": url,
@@ -105,7 +113,8 @@ for idx, row in enumerate(reader):
         "manifest": manifest,
     }
 
-    nfl = 0
+    nfl = 0  # non-free-licenses
+
     for prj in manifest["projects"]:
         for tag in prj["tags"]:
             if tag in tag_count:
@@ -126,21 +135,26 @@ for idx, row in enumerate(reader):
                 lic_map[lic] = 1
             if lic in non_free_licenses:
                 nfl += 1
+
     this_mdesc["nfl"] = nfl
-    # print(json.dumps(manifest, indent=2))
+
     plan_max = {}
+    manifest_currencies = []
     for plans in manifest["funding"]["plans"]:
         freq = plans["frequency"]
         currency = plans["currency"]
         cmult = currency_weight[currency] / currency_weight["USD"]
         if currency not in used_currencies:
             used_currencies.append(currency)
+        if currency not in manifest_currencies:
+            manifest_currencies.append(currency)
         # Normalize fin totals to USD, as the FLOSS fund gives >= $$$$$ !
         amount = plans["amount"] * cmult
         if freq in plan_max:
             plan_max[freq] = max(plan_max[freq], amount)
         else:
             plan_max[freq] = amount
+
     max_fr = 0
     if "one-time" in plan_max:
         max_fr = max(plan_max["one-time"], max_fr)
@@ -152,9 +166,23 @@ for idx, row in enumerate(reader):
     if max_fr >= ft:
         meets_ft += 1
     this_mdesc["funding-plan-max"] = plan_max
+    this_mdesc["currencies"] = manifest_currencies
+
     mdesc.append(this_mdesc)
 
     # Update stats
+    npc = len(manifest_currencies)
+    primary_cur = manifest_currencies[0]
+    if primary_cur not in cur_fr:
+        cur_fr[primary_cur] = 0
+    if npc == 1:
+        cur_fr[primary_cur] += max_fr
+    elif npc > 1:
+        mc_projects.append({"currencies": manifest_currencies, "mdesc": this_mdesc})
+        print(
+            f"WARNING: project id={rid} uses more than one currency({manifest_currencies}). Handle this. max_fr={max_fr}"
+        )
+
     etype = manifest["entity"]["type"]
     if etype in etype_count:
         etype_count[etype] += 1
@@ -248,6 +276,18 @@ print("Finances Reported by entities:")
 pprint(manifest_fin_count)
 used_currencies.sort()
 print("Currencies:", used_currencies)
+print(used_currencies)
+print()
+print("Cumulative funding requested, by currency, in USD:")
+pprint(cur_fr)
+print("Multi-currency projects:")
+for mcp in mc_projects:
+    emdesc = mcp["mdesc"]
+    url = emdesc["url"]
+    manifest = emdesc["manifest"]
+    ename = manifest["entity"]["name"]
+    max_fr = math.floor(emdesc["funding-plan-max"]["max-fr"])
+    print(f"  {mcp['currencies']} {url} {ename} {max_fr}")
 print()
 print(f"-- Manifests above funding threshold {ft//1000}k USD --")
 print()
