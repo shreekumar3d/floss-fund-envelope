@@ -18,6 +18,8 @@ import string
 import wordcloud
 from PIL import Image
 import numpy as np
+import matplotlib.pyplot as plt
+
 
 # FLOSS fund is looking to fund entities in the range
 # 10k - 100k.
@@ -42,6 +44,9 @@ def dtformat(dt):
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "manifest", metavar="funding-manifest.csv", help="Path to funding-manifest.csv"
+)
+parser.add_argument(
+    "--funding-pie", action="store_true", help="Show funding split as a pie-chart"
 )
 args = parser.parse_args()
 
@@ -558,7 +563,6 @@ print("These tags (suggested by floss.fund) are NOT used by any project:")
 pprint(unused_tags)
 
 # Generate word cloud with tags
-
 # One with the floss flower mask
 floss_mask = np.array(Image.open("images/mask-floss-fund-logo.png"))
 wc = wordcloud.WordCloud(
@@ -570,3 +574,23 @@ wc.to_file("floss_fund_tags.png")
 # One for "unused" tags. These all have count=1
 wc2 = wordcloud.WordCloud(background_color="white").generate(" ".join(unused_tags))
 wc2.to_file("unused_tags.png")
+
+# Pie chart
+if args.funding_pie:
+    labels = cur_fr.keys()
+    sizes = cur_fr.values()
+    explode = [
+        0.1 if currency == "USD" else 0 for currency in labels
+    ]  # only "explode" USD
+
+    fig1, ax1 = plt.subplots()
+    ax1.pie(
+        sizes,
+        explode=explode,
+        labels=labels,
+        autopct="%1.1f%%",
+        shadow=True,
+        startangle=90,
+    )
+    ax1.axis("equal")  # Equal aspect ratio ensures that pie is drawn as a circle.
+    plt.show()
