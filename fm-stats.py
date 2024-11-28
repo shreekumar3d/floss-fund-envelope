@@ -18,6 +18,7 @@ import string
 import wordcloud
 from PIL import Image
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 
 
@@ -49,6 +50,9 @@ parser.add_argument(
     "--funding-pie", action="store_true", help="Show funding split as a pie-chart"
 )
 parser.add_argument("--word-cloud", action="store_true", help="Generate word clouds")
+parser.add_argument(
+    "--funding-trend", action="store_true", help="Plot funding trend (line+bar)"
+)
 args = parser.parse_args()
 
 csvfile = open(args.manifest, encoding="utf-8")
@@ -621,4 +625,19 @@ if args.funding_pie:
         startangle=90,
     )
     ax1.axis("equal")  # Equal aspect ratio ensures that pie is drawn as a circle.
+    plt.show()
+
+# Bar + line plot
+if args.funding_trend:
+    p1_t = pd.DataFrame(
+        {
+            "d_manifests": timeseries["d_manifests"],
+            "d_projects": timeseries["d_projects"],
+            "c_mfr_total": timeseries["c_mfr_total"],
+        }
+    )
+
+    # p1_t[['d_manifests', 'd_projects']].plot(kind='bar')
+    p1_t[["d_manifests"]].plot(kind="bar")
+    p1_t["c_mfr_total"].plot(secondary_y=True, color="red")
     plt.show()
