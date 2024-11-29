@@ -62,7 +62,7 @@ def show_latest(conn, save_to):
 def show_all(conn):
     cursor = conn.cursor()
     qr = cursor.execute(
-        "SELECT last_modified, url, fetched_at, data FROM mdb_history ORDER BY last_modified ASC"
+        "SELECT last_modified, url, fetched_at, data FROM mdb_history ORDER BY last_modified DESC"
     )
     rec = qr.fetchone()
     if not rec:
