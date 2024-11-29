@@ -102,7 +102,7 @@ manifest_fin_count = {
 # limitation on commercial use isn't "free" ?
 # just a flag for examination, not an argument to
 # consider/reject the manifest
-non_free_licenses = ["CC-BY-NC-SA-3.0"]
+non_free_licenses = ["CC-BY-NC-SA-3.0", "commercial", "BSL"]
 
 # usage count for every tag used in projects
 tag_count = {}
@@ -415,7 +415,8 @@ for idx, minfo in enumerate(mdesc):
     mf = minfo["funding-plan-max"]["max-fr"]
     manifest = minfo["manifest"]
     print(idx + 1, minfo["url"], f"(Project ID: {minfo['id']})")
-    print("  Non-free licences: ", minfo["nfl"])
+    if minfo['nfl'] > 0:
+        print("  Non-free licences: ", minfo["nfl"])
     print("  Entity Type : ", manifest["entity"]["type"])
     print("  Max funding requested : ", mf)
     print("  Financial totals: ", minfo["fin_totals"])
