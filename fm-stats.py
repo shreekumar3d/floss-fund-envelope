@@ -103,7 +103,21 @@ manifest_fin_count = {
 # just a flag for examination, not an argument to
 # consider/reject the manifest
 non_free_licenses = ["CC-BY-NC-SA-3.0", "commercial", "BSL"]
-
+# licenses are user input, so we try to standardize a bit
+# We standardise SPDX identifier on target side
+# See https://spdx.org/licenses/preview/
+lic_eq_map = {
+    "Apache2": "Apache-2.0",
+    "Apache V2": "Apache-2.0",
+    "GPL-3.0 license": "GPL-3.0-or-later",
+    "GPL-V2": "GPL-2.0-or-later",
+    "unlicense": "Unlicense",
+    "BSD-3": "BSD-3-Clause",
+    "AGPL-3.0": "AGPL-3.0-or-later",
+    "GPL-2.0": "AGPL-2.0-or-later",
+    "GPL-3.0": "GPL-3.0-or-later",
+    "LGPL-3.0": "LGPL-3.0-or-later",
+}
 # usage count for every tag used in projects
 tag_count = {}
 
@@ -153,7 +167,7 @@ for idx, row in enumerate(reader):
     }
 
     nfl = 0  # non-free-licenses
-
+    mlic = {}
     for prj in manifest["projects"]:
 
         prj_name = prj["name"]
@@ -175,15 +189,24 @@ for idx, row in enumerate(reader):
                 lic = lic[5:]
             elif lic.startswith("GNU:"):
                 lic = lic[4:]  # I see a GNU:AGPL-3.0
+
+            # Replace with standardized value
+            if lic in lic_eq_map:
+                lic = lic_eq_map[lic]
+
             if lic in lic_map:
                 lic_map[lic] += 1
             else:
                 lic_map[lic] = 1
             if lic in non_free_licenses:
                 nfl += 1
+            if lic in mlic:
+                mlic[lic] += 1
+            else:
+                mlic[lic] = 1
 
     this_mdesc["nfl"] = nfl
-
+    this_mdesc["licences"] = mlic
     plan_max = {}
     manifest_currencies = []
     for plans in manifest["funding"]["plans"]:
@@ -415,8 +438,9 @@ for idx, minfo in enumerate(mdesc):
     mf = minfo["funding-plan-max"]["max-fr"]
     manifest = minfo["manifest"]
     print(idx + 1, minfo["url"], f"(Project ID: {minfo['id']})")
-    if minfo['nfl'] > 0:
+    if minfo["nfl"] > 0:
         print("  Non-free licences: ", minfo["nfl"])
+    print("  Licenses : ", minfo["licences"])
     print("  Entity Type : ", manifest["entity"]["type"])
     print("  Max funding requested : ", mf)
     print("  Financial totals: ", minfo["fin_totals"])
