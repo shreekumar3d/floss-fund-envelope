@@ -426,7 +426,7 @@ for ename in mdesc_by_ename:
         url = emdesc["url"]
         print(f"    {url}")
 print()
-print(f"-- Manifests above funding threshold {ft//1000}k USD --")
+print(f"-- {meets_ft} manifests above funding threshold {ft//1000}k USD --")
 print()
 for idx, minfo in enumerate(mdesc):
     if idx == meets_ft:
@@ -572,7 +572,7 @@ for idx, minfo in enumerate(mdesc):
         timeseries["c_fin_totals"].append(c_fin_totals)
         timeseries["c_currencies"].append(c_currencies)
         # dump cumulative stats
-        print(f"Day {day_since_launch}:")
+        print(f"Day {day_since_launch}:", launch_dt+datetime.timedelta(days=day_since_launch))
         print("  New manifests:", d_manifests)
         print("  New projects:", d_projects)
         print("  New entity types:", d_etype)
@@ -659,7 +659,10 @@ for idx, (start, end) in enumerate(zip(timeseries["t"][:-1], timeseries["t"][1:]
             ts2["d_currencies"].insert(this_idx, d_currencies)
 
 print("Days where no entities joined in the action:", inaction_days)
-
+last_entity_dt = launch_dt+datetime.timedelta(timeseries["t"][-1])
+print("Last entity joined at :", last_entity_dt)
+td = datetime.datetime.now(datetime.UTC)-last_entity_dt
+print("No entity joined for the last :", td)
 # Done expanding, so rename
 timeseries = ts2
 del ts2
