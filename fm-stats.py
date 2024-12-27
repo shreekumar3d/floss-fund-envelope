@@ -661,8 +661,40 @@ for idx, (start, end) in enumerate(zip(timeseries["t"][:-1], timeseries["t"][1:]
 print("Days where no entities joined in the action:", inaction_days)
 last_entity_dt = launch_dt+datetime.timedelta(timeseries["t"][-1])
 print("Last entity joined at :", last_entity_dt)
-td = datetime.datetime.now(datetime.UTC)-last_entity_dt
-print("No entity joined for the last :", td)
+nad = datetime.datetime.now(datetime.UTC)-last_entity_dt
+print("No entity joined for the last :", nad)
+# Insert zeros at the end of the arrays - corresponding to
+# trailing days that did not see any new entity joining
+for idx in range(nad.days):
+    ts2["t"].append(timeseries["t"][-1])
+    for key in [
+        "manifests",
+        "projects",
+        "mfr_total",
+        "etype",
+        "manifests_above_ft",
+        "fin_totals",
+        "currencies",
+    ]:
+        key_name = f"c_{key}"
+        ts2[key_name].append(timeseries[key_name][-1])
+    (
+        d_manifests,
+        d_projects,
+        d_etype,
+        d_fin_totals,
+        d_manifests_above_ft,
+        d_mfr_total,
+        d_currencies,
+    ) = reset_counters()
+    ts2["d_manifests"].append(d_manifests)
+    ts2["d_projects"].append(d_projects)
+    ts2["d_etype"].append(d_etype)
+    ts2["d_fin_totals"].append(d_fin_totals)
+    ts2["d_manifests_above_ft"].append(d_manifests_above_ft)
+    ts2["d_mfr_total"].append(d_mfr_total)
+    ts2["d_currencies"].append(d_currencies)
+
 # Done expanding, so rename
 timeseries = ts2
 del ts2
@@ -755,3 +787,5 @@ if args.funding_bar:
     x = range(len(y))
     plt.bar(x, y, color=ety_clipped_colors)
     plt.show()
+
+print("No entity joined for the last :", nad)
