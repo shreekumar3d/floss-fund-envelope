@@ -419,7 +419,7 @@ for mcp in mc_projects:
     ename = manifest["entity"]["name"]
     max_fr = math.floor(emdesc["funding-plan-max"]["max-fr"])
     print(f"  {mcp['currencies']} {url} {ename} {max_fr}")
-print("Entities with more than 1 project:")
+print("Entities with more than 1 funding request(manifest):")
 for ename in mdesc_by_ename:
     print(f"  {ename}")
     for emdesc in mdesc_by_ename[ename]:
