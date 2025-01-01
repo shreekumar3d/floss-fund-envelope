@@ -116,6 +116,7 @@ lic_eq_map = {
     "AGPL-3.0": "AGPL-3.0-or-later",
     "GPL-2.0": "AGPL-2.0-or-later",
     "GPL-3.0": "GPL-3.0-or-later",
+    "gplV3": "GPL-3.0-or-later",
     "LGPL-3.0": "LGPL-3.0-or-later",
 }
 # usage count for every tag used in projects
