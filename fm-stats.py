@@ -54,6 +54,14 @@ currency_weight = {
 }
 
 
+def fund_clip(val):
+    if val < ft:
+        return ft
+    if val > fmax:
+        return fmax
+    return val
+
+
 def dtformat(dt):
     return dt.strftime("%a, %-d %b %Y %H:%M:%S %Z")
 
@@ -488,6 +496,7 @@ def reset_counters():
         "taxes": 0,
     }
     d_mfr_total = 0
+    d_mfr_total_clipped = 0
     d_currencies = []
     return (
         d_manifests,
@@ -496,6 +505,7 @@ def reset_counters():
         d_fin_totals,
         d_manifests_above_ft,
         d_mfr_total,
+        d_mfr_total_clipped,
         d_currencies,
     )
 
@@ -507,6 +517,7 @@ def reset_counters():
     c_fin_totals,
     c_manifests_above_ft,
     c_mfr_total,
+    c_mfr_total_clipped,
     c_currencies,
 ) = reset_counters()
 (
@@ -516,6 +527,7 @@ def reset_counters():
     d_fin_totals,
     d_manifests_above_ft,
     d_mfr_total,
+    d_mfr_total_clipped,
     d_currencies,
 ) = reset_counters()
 
@@ -525,6 +537,7 @@ timeseries = {
     "d_manifests": [],
     "d_projects": [],
     "d_mfr_total": [],
+    "d_mfr_total_clipped": [],
     "d_etype": [],
     "d_manifests_above_ft": [],
     "d_fin_totals": [],
@@ -532,6 +545,7 @@ timeseries = {
     "c_manifests": [],
     "c_projects": [],
     "c_mfr_total": [],
+    "c_mfr_total_clipped": [],
     "c_etype": [],
     "c_manifests_above_ft": [],
     "c_fin_totals": [],
@@ -547,8 +561,11 @@ for idx, minfo in enumerate(mdesc):
         c_manifests += d_manifests
         c_projects += d_projects
         c_mfr_total += d_mfr_total
+        c_mfr_total_clipped += d_mfr_total_clipped
         c_mfr_total = math.floor(c_mfr_total)
+        c_mfr_total_clipped = math.floor(c_mfr_total_clipped)
         d_mfr_total = math.floor(d_mfr_total)
+        d_mfr_total_clipped = math.floor(d_mfr_total_clipped)
         d_currencies.sort()
         for currency in d_currencies:
             if currency not in c_currencies:
@@ -561,6 +578,7 @@ for idx, minfo in enumerate(mdesc):
         timeseries["d_manifests"].append(copy.copy(d_manifests))
         timeseries["d_projects"].append(copy.copy(d_projects))
         timeseries["d_mfr_total"].append(copy.copy(d_mfr_total))
+        timeseries["d_mfr_total_clipped"].append(copy.copy(d_mfr_total_clipped))
         timeseries["d_etype"].append(copy.copy(d_etype))
         timeseries["d_manifests_above_ft"].append(d_manifests_above_ft)
         timeseries["d_fin_totals"].append(d_fin_totals)
@@ -568,17 +586,22 @@ for idx, minfo in enumerate(mdesc):
         timeseries["c_manifests"].append(copy.copy(c_manifests))
         timeseries["c_projects"].append(copy.copy(c_projects))
         timeseries["c_mfr_total"].append(copy.copy(c_mfr_total))
+        timeseries["c_mfr_total_clipped"].append(copy.copy(c_mfr_total_clipped))
         timeseries["c_etype"].append(copy.copy(c_etype))
         timeseries["c_manifests_above_ft"].append(c_manifests_above_ft)
         timeseries["c_fin_totals"].append(c_fin_totals)
         timeseries["c_currencies"].append(c_currencies)
         # dump cumulative stats
-        print(f"Day {day_since_launch}:", launch_dt+datetime.timedelta(days=day_since_launch))
+        print(
+            f"Day {day_since_launch}:",
+            launch_dt + datetime.timedelta(days=day_since_launch),
+        )
         print("  New manifests:", d_manifests)
         print("  New projects:", d_projects)
         print("  New entity types:", d_etype)
         print("  Manifests > funding threshold:", d_manifests_above_ft)
         print("  Funding requested :", d_mfr_total)
+        print("  Funding requested (clipped) :", d_mfr_total_clipped)
         print("  Additional financials:", d_fin_totals)
         print("  Currencies used:", d_currencies)
         print("  Cumulative:")
@@ -587,6 +610,7 @@ for idx, minfo in enumerate(mdesc):
         print("    Entity types:", c_etype)
         print("    Manifests > funding threshold:", c_manifests_above_ft)
         print("    Funding requested :", c_mfr_total)
+        print("    Funding requested (clipped) :", c_mfr_total_clipped)
         print("    Financials:", c_fin_totals)
         print("    Currencies used:", c_currencies)
         (
@@ -596,6 +620,7 @@ for idx, minfo in enumerate(mdesc):
             d_fin_totals,
             d_manifests_above_ft,
             d_mfr_total,
+            d_mfr_total_clipped,
             d_currencies,
         ) = reset_counters()
         day_since_launch = tdiff.days
@@ -607,6 +632,7 @@ for idx, minfo in enumerate(mdesc):
     if minfo["funding-plan-max"]["max-fr"] >= ft:
         d_manifests_above_ft += 1
     d_mfr_total += minfo["funding-plan-max"]["max-fr"]
+    d_mfr_total_clipped += fund_clip(minfo["funding-plan-max"]["max-fr"])
     for key in d_fin_totals:
         d_fin_totals[key] += minfo["fin_totals"][key]
         c_fin_totals[key] += minfo["fin_totals"][key]
@@ -635,6 +661,7 @@ for idx, (start, end) in enumerate(zip(timeseries["t"][:-1], timeseries["t"][1:]
                 "manifests",
                 "projects",
                 "mfr_total",
+                "mfr_total_clipped",
                 "etype",
                 "manifests_above_ft",
                 "fin_totals",
@@ -649,6 +676,7 @@ for idx, (start, end) in enumerate(zip(timeseries["t"][:-1], timeseries["t"][1:]
                 d_fin_totals,
                 d_manifests_above_ft,
                 d_mfr_total,
+                d_mfr_total_clipped,
                 d_currencies,
             ) = reset_counters()
             ts2["d_manifests"].insert(this_idx, d_manifests)
@@ -657,12 +685,13 @@ for idx, (start, end) in enumerate(zip(timeseries["t"][:-1], timeseries["t"][1:]
             ts2["d_fin_totals"].insert(this_idx, d_fin_totals)
             ts2["d_manifests_above_ft"].insert(this_idx, d_manifests_above_ft)
             ts2["d_mfr_total"].insert(this_idx, d_mfr_total)
+            ts2["d_mfr_total_clipped"].insert(this_idx, d_mfr_total_clipped)
             ts2["d_currencies"].insert(this_idx, d_currencies)
 
 print("Days where no entities joined in the action:", inaction_days)
-last_entity_dt = launch_dt+datetime.timedelta(timeseries["t"][-1])
+last_entity_dt = launch_dt + datetime.timedelta(timeseries["t"][-1])
 print("Last entity joined at :", last_entity_dt)
-nad = datetime.datetime.now(datetime.UTC)-last_entity_dt
+nad = datetime.datetime.now(datetime.UTC) - last_entity_dt
 print("No entity joined for the last :", nad)
 # Insert zeros at the end of the arrays - corresponding to
 # trailing days that did not see any new entity joining
@@ -672,6 +701,7 @@ for idx in range(nad.days):
         "manifests",
         "projects",
         "mfr_total",
+        "mfr_total_clipped",
         "etype",
         "manifests_above_ft",
         "fin_totals",
@@ -686,6 +716,7 @@ for idx in range(nad.days):
         d_fin_totals,
         d_manifests_above_ft,
         d_mfr_total,
+        d_mfr_total_clipped,
         d_currencies,
     ) = reset_counters()
     ts2["d_manifests"].append(d_manifests)
@@ -694,6 +725,7 @@ for idx in range(nad.days):
     ts2["d_fin_totals"].append(d_fin_totals)
     ts2["d_manifests_above_ft"].append(d_manifests_above_ft)
     ts2["d_mfr_total"].append(d_mfr_total)
+    ts2["d_mfr_total_clipped"].append(d_mfr_total_clipped)
     ts2["d_currencies"].append(d_currencies)
 
 # Done expanding, so rename
@@ -766,13 +798,13 @@ if args.funding_trend:
         {
             "d_manifests": timeseries["d_manifests"],
             "d_projects": timeseries["d_projects"],
-            "c_mfr_total": timeseries["c_mfr_total"],
+            "c_mfr_total_clipped": timeseries["c_mfr_total_clipped"],
         }
     )
 
     # p1_t[['d_manifests', 'd_projects']].plot(kind='bar')
     p1_t[["d_manifests"]].plot(kind="bar")
-    p1_t["c_mfr_total"].plot(secondary_y=True, color="red")
+    p1_t["c_mfr_total_clipped"].plot(secondary_y=True, color="red")
     plt.show()
 
 # Bar plot
