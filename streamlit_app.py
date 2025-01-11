@@ -4,6 +4,10 @@
 #
 # Gets data directly from dir.floss.fund
 #
+# Thanks to Ansh Arora for the idea of using streamlit to do this.
+# He made this : https://github.com/ansharora28/floss-fund-analysis
+# effectively showing me how easy that is to do with streamlit.
+# 
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -14,6 +18,7 @@ import stats
 import matplotlib.pyplot as plt
 
 # Get the manifest and extract it in memory
+# FIXME use streamlit's cache system later
 manifest_tgz = "https://dir.floss.fund/funding-manifests.tar.gz"
 rg = requests.get(manifest_tgz)
 mzip = tarfile.open(fileobj=io.BytesIO(rg.content), mode="r:gz")
