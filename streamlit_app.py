@@ -7,7 +7,7 @@
 # Thanks to Ansh Arora for the idea of using streamlit to do this.
 # He made this : https://github.com/ansharora28/floss-fund-analysis
 # effectively showing me how easy that is to do with streamlit.
-# 
+#
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -54,16 +54,58 @@ plt2.set_ylabel("Funds Requested (Million USD)")
 st.title("FLOSS/fund at a glance")
 st.write(
     """
-FLOSS/fund is accepting applications since 15th October, 2024.
-This graph shows how new entities(org, individual, group) are applying on a daily basis,
-and the trend of the cumulative funding requested over time.
+[FLOSS/fund](https://floss.fund/) is a 1 million USD global fund for FLOSS projects.
+It has been accepting applications since 15th October, 2024. Graph below shows how new
+entities(org, individual, group) are applying on a daily basis, and the trend of the
+cumulative funding requested over time.
 """
 )
 st.pyplot(plt)
 st.write(
     """
+%d individuals, %d organizations, %d groups have applied for funding.
+This is a cumulative %d entities representing %d projects, asking for
+%1.2f Million USD.
+
 Days with no blue bars indicate that no new applications were received on that day.
 There have been %d such days, out of %d days that the fund has been active.
+
+FLOSS/fund is accepting projects. If you know any projects, please refer FLOSS/fund
+to them.  Community and individual outreach can help more projects get the funds
+they need.
 """
-    % (info.inaction_days, days_since_launch)
+    % (
+        info.etype_count["individual"],
+        info.etype_count["organisation"],
+        info.etype_count["group"],
+        timeseries["c_manifests"][-1],
+        timeseries["c_projects"][-1],
+        (timeseries["c_mfr_total_clipped"][-1] // 1e4) / 100.0,
+        info.inaction_days,
+        days_since_launch,
+    )
 )
+
+# st.divider()
+
+st.write(
+    """
+Note that funds may be requested in any currency. Here is the spread of funds requested,
+by currency:
+"""
+)
+labels = info.cur_fr.keys()
+sizes = info.cur_fr.values()
+explode = [0.1 if currency == "USD" else 0 for currency in labels]  # only "explode" USD
+fig1, ax1 = plt.subplots()
+ax1.pie(
+    sizes,
+    explode=explode,
+    labels=labels,
+    autopct="%1.1f%%",
+    shadow=True,
+    # startangle=st_angle,
+    textprops={"fontsize": 6},
+)
+ax1.axis("equal")  # Equal aspect ratio ensures that pie is drawn as a circle.
+st.pyplot(fig1)
