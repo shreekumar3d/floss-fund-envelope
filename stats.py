@@ -47,6 +47,27 @@ def fund_clip(val):
         return fmax
     return val
 
+# list of funding requests, clipped to the range (10-100k)
+# source : https://www.rapidtables.com/web/color/purple-color.html
+b1_color = "#E6E6FA"  # 0.  lavender
+cmap = [
+    "#D8BFD8",  # 10.   thistle
+    "#DDA0DD",  # 20.  plum
+    "#EE82EE",  # 30.  violet
+    "#DA70D6",  # 40.  orchid
+    "#BA55D3",  # 50.  medium orchid
+    "#8A2BE2",  # 60.  blue violet
+    "#9932CC",  # 70.  dark orchid
+    "#8B008B",  # 80.  dark magenta
+    "#800080",  # 90.  Purple
+    "#4B0082",  # 100. Indigo
+]
+
+
+def val2color(fr):
+    idx = ((fr - ft) / (fmax - ft)) * (len(cmap) - 1)
+    idx = math.floor(idx)
+    return cmap[idx]
 
 ft_keys = ["income", "expenses", "taxes"]
 # limitation on commercial use isn't "free" ?
@@ -355,9 +376,13 @@ def process_csv(csvfile):
         ety_clipped_sum += max_fr
 
     ety_clipped_funding.sort()
+    ety_clipped_colors = [val2color(x) for x in ety_clipped_funding]
 
     # Highest funding requirements float to the top!
     mdesc.sort(key=lambda x: x["funding-plan-max"]["max-fr"], reverse=True)
+    bucket1 = sum(fr_below_ft)
+    ety_clipped_funding.insert(0, bucket1)
+    ety_clipped_colors.insert(0, b1_color)
 
     # Compute, for every day
     # - incoming manifests
@@ -618,6 +643,7 @@ def process_csv(csvfile):
     info.prj_map = prj_map
     info.fin_totals = fin_totals
     info.ety_clipped_funding = ety_clipped_funding
+    info.ety_clipped_colors = ety_clipped_colors
     info.fr_below_ft = fr_below_ft
     info.ety_clipped_sum = ety_clipped_sum
     info.inaction_days = inaction_days

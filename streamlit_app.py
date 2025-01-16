@@ -16,6 +16,7 @@ import requests
 import io
 import stats
 import matplotlib.pyplot as plt
+import math
 
 # Get the manifest and extract it in memory
 # FIXME use streamlit's cache system later
@@ -64,15 +65,10 @@ st.pyplot(plt)
 st.write(
     """
 %d individuals, %d organizations, %d groups have applied for funding.
-This is a cumulative %d entities representing %d projects, asking for
-%1.2f Million USD.
-
-Days with no blue bars indicate that no new applications were received on that day.
-There have been %d such days, out of %d days that the fund has been active.
-
-FLOSS/fund is accepting projects. If you know any projects, please refer FLOSS/fund
-to them.  Community and individual outreach can help more projects get the funds
-they need.
+This is a cumulative **%d entities** representing **%d projects**, asking for
+**%1.2f Million USD** in funding. Days with no blue bars indicate that no new
+applications were received on that day. There have been %d such days, out of
+%d days that the fund has been active.
 """
     % (
         info.etype_count["individual"],
@@ -86,6 +82,52 @@ they need.
     )
 )
 
+#st.write('''
+#FLOSS/fund provides in the range of 10k-100k USD per entity.
+#The spread of amount of funds requested by entities is shown in the graph below.
+#Entities that request less than 10k USD have been merged into
+#the first bucket. Rest are individual entities.
+#''')
+#fund_sum = 0
+#for idx, val in enumerate(info.ety_clipped_funding):
+#    percentage = math.floor((fund_sum / info.ety_clipped_sum) * 100)
+#    print(idx, val, 100 - percentage)
+#    fund_sum += val
+#y = info.ety_clipped_funding
+#x = range(len(y))
+#fig2, ax2 = plt.subplots()
+#ax2.bar(x, y, color=info.ety_clipped_colors)
+#ax2.set_ylabel("Funding requested (USD)")
+#ax2.set_xlabel("Maximum funding requested by entities (sorted)")
+#ax2.set_xticks([])
+#st.pyplot(fig2)
+
+st.write('''
+FLOSS/fund provides in the range of 10k-100k USD per entity.
+Several projects have funding plans that are less than 10k.
+Graph below shows how many entities fall in specific funding request
+ranges.
+''')
+range_occurences = []
+hist_labels = ['< 10k USD']
+range_occurences.append(len(info.fr_below_ft))
+min_val = 10*1000 - 1 # achieves >= in the filter logic, see below
+for max_val in range(20*1000, 100*1000+1, 10*1000):
+    count = len(list(filter(lambda x: ((x>min_val) and x<=max_val), info.ety_clipped_funding[1:])))
+    range_occurences.append(count)
+    hist_labels.append("%sk - %sk USD"%(min_val//1000, max_val//1000))
+    min_val = max_val
+print(range_occurences)
+fig3, ax3 = plt.subplots()
+ax3.barh(hist_labels, range_occurences)
+ax3.set_xlabel("Number of entities")
+st.pyplot(fig3)
+
+st.write('''
+FLOSS/fund is accepting projects. If you know any projects, please refer FLOSS/fund
+to them.  Community and individual outreach can help more projects get the funds
+they need.
+''')
 # st.divider()
 
 st.write(
