@@ -447,6 +447,7 @@ for idx, minfo in enumerate(mdesc):
     mf = minfo["funding-plan-max"]["max-fr"]
     manifest = minfo["manifest"]
     print(idx + 1, minfo["url"], f"(Project ID: {minfo['id']})")
+    print("  Name : ", manifest["entity"]["name"])
     if minfo["nfl"] > 0:
         print("  Non-free licences: ", minfo["nfl"])
     print("  Licenses : ", minfo["licences"])
