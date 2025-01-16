@@ -190,3 +190,14 @@ asking for more than 100k have been clipped to 100k in all the data prior to thi
 but here we show everything as is. Please scroll the list to see all the entries.
 ''')
 df
+
+st.subheader('Project Info')
+st.markdown('''
+Details of this project are on
+[its github page](https://github.com/shreekumar3d/floss-fund-envelope/).
+
+[Ansh Arora](https://ansharora.in/) came up with the idea of a live status view,
+and hacked up an
+[app to visualize the FLOSS/fund](https://floss-fund.streamlit.app/) in quick time.
+This started off from there, and includes some of his ideas as well.
+''')
