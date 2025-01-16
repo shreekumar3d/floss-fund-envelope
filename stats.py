@@ -259,7 +259,10 @@ def process_csv(csvfile):
                 plan_max[freq] = max(plan_max[freq], amount)
             else:
                 plan_max[freq] = amount
-
+        funding_channel_types = []
+        for channels in manifest["funding"]["channels"]:
+            funding_channel_types.append(channels['guid'])
+        this_mdesc["funding_channel_names"] = funding_channel_types
         max_fr = 0
         if "one-time" in plan_max:
             max_fr = max(plan_max["one-time"], max_fr)

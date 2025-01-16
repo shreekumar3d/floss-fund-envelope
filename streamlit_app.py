@@ -158,6 +158,17 @@ ax1.pie(
 ax1.axis("equal")  # Equal aspect ratio ensures that pie is drawn as a circle.
 st.pyplot(fig1)
 
+fc_freq = {}
+for minfo in info.mdesc:
+    fc_names = minfo['funding_channel_names']
+    for t in fc_names:
+        if t in fc_freq:
+            fc_freq[t] += 1
+        else:
+            fc_freq[t] = 1
+# Don't show for now
+#st.write(fc_freq)
+
 # Highest funding requirements float to the top!
 info.mdesc.sort(key=lambda x: x["funding-plan-max"]["max-fr"], reverse=True)
 freq = []
