@@ -18,6 +18,13 @@ import stats
 import matplotlib.pyplot as plt
 import math
 
+# See shortcode list here
+# https://streamlit-emoji-shortcodes-streamlit-app-gwckff.streamlit.app/
+st.set_page_config(
+    page_title="Overall Status",
+    page_icon=":chart_with_upwards_trend:",
+)
+
 # Get the manifest and extract it in memory
 # FIXME use streamlit's cache system later
 manifest_tgz = "https://dir.floss.fund/funding-manifests.tar.gz"
@@ -106,7 +113,7 @@ st.write('''
 FLOSS/fund provides in the range of 10k-100k USD per entity.
 Several projects have funding plans that are less than 10k.
 Graph below shows how many entities fall in specific funding request
-ranges.
+ranges. Complete details of all entities are at the end of this page.
 ''')
 range_occurences = []
 hist_labels = ['< 10k USD']
@@ -117,7 +124,6 @@ for max_val in range(20*1000, 100*1000+1, 10*1000):
     range_occurences.append(count)
     hist_labels.append("%sk - %sk USD"%(min_val//1000, max_val//1000))
     min_val = max_val
-print(range_occurences)
 fig3, ax3 = plt.subplots()
 ax3.barh(hist_labels, range_occurences)
 ax3.set_xlabel("Number of entities")
@@ -151,3 +157,25 @@ ax1.pie(
 )
 ax1.axis("equal")  # Equal aspect ratio ensures that pie is drawn as a circle.
 st.pyplot(fig1)
+
+# Highest funding requirements float to the top!
+info.mdesc.sort(key=lambda x: x["funding-plan-max"]["max-fr"], reverse=True)
+freq = []
+freq_ename = []
+for minfo in info.mdesc:
+    mf = minfo["funding-plan-max"]["max-fr"]
+    freq.append(math.floor(mf))
+    manifest = minfo["manifest"]
+    freq_ename.append(manifest["entity"]["name"])
+
+st.divider()
+st.subheader('Details of Entities')
+df = pd.DataFrame({"Entity Name": freq_ename, "Max Funding Requested (USD)": freq})
+st.write('''
+Table below lists all entities, and funding requested by them. Note that the list
+is sorted such that entities that have requested the maximum funds are on top.
+The largest funding plan for each entity is considered. Note that funding plans
+asking for more than 100k have been clipped to 100k in all the data prior to this,
+but here we show everything as is. Please scroll the list to see all the entries.
+''')
+df
