@@ -129,6 +129,7 @@ def process_csv(csvfile):
     disabled = 0
     errors = 0
     mdesc = []
+    disabled_mdesc = []
     meets_ft = 0
     manifests_zfr = 0  # zero fund requested !
     etype_count = {}
@@ -171,17 +172,12 @@ def process_csv(csvfile):
 
     reader = csv.reader(csvfile)
     for idx, row in enumerate(reader):
-        # Skip the header
-        if idx == 0:
+        # Skip the header and the localhost test line
+        if idx <= 1:
             continue
 
         nr += 1
         rid, url, created_at, updated_at, status, manifest_json = row
-
-        if status != "active":
-            # print(status, url)
-            disabled += 1
-            continue
 
         try:
             manifest = json.loads(manifest_json)
@@ -201,6 +197,13 @@ def process_csv(csvfile):
             "updated_at": updated_at,
             "manifest": manifest,
         }
+
+        # Don't process further if not active
+        if status != "active":
+            # print(status, url)
+            disabled += 1
+            disabled_mdesc.append(this_mdesc)
+            continue
 
         nfl = 0  # non-free-licenses
         mlic = {}
@@ -626,6 +629,7 @@ def process_csv(csvfile):
     info.disabled = disabled
     info.errors = errors
     info.mdesc = mdesc
+    info.disabled_mdesc = disabled_mdesc
     info.meets_ft = meets_ft
     info.manifests_zfr = manifests_zfr
     info.etype_count = etype_count
