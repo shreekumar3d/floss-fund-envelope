@@ -49,8 +49,10 @@ plt2 = p1_t["c_mfr_total_clipped"].plot(secondary_y=True, color="red")
 days_since_launch = len(timeseries["d_manifests"])
 ticks = list(range(0, days_since_launch, 1))
 tick_label = []
+# generic auto-ticks based on number of days, it's kept a multiple of 5
+tick_interval = (((days_since_launch/10)+4)//5)*5
 for val in ticks:
-    if val % 5 == 0:
+    if val % tick_interval == 0:
         tick_label.append(str(val))
     else:
         tick_label.append("")
