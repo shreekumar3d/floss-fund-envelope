@@ -193,6 +193,24 @@ but here we show everything as is. Please scroll the list to see all the entries
 ''')
 df
 
+recent_count = 10
+recent_fr = []
+recent_fr_name = []
+info.mdesc.sort(key=lambda x: x["created_at"],reverse=True)
+for idx, minfo in enumerate(info.mdesc[:recent_count]):
+    mf = minfo["funding-plan-max"]["max-fr"]
+    recent_fr.append(math.floor(mf))
+    manifest = minfo["manifest"]
+    recent_fr_name.append(manifest["entity"]["name"])
+st.divider()
+st.subheader('Recent Funding Requests')
+df = pd.DataFrame({"Entity Name": recent_fr_name, "Max Funding Requested (USD)": recent_fr})
+st.write(f'''
+The most recent {recent_count} new entities to create funding requests are shown
+here, along with their maximum funding plan (uncapped).
+''')
+df
+
 if len(info.disabled_mdesc)>0:
     st.subheader('Disabled Manifests')
     st.markdown('''
