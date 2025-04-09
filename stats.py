@@ -31,11 +31,13 @@ fmax = 100 * 1000
 # Currency conversion as of 26 Nov 2024
 # This isn't correct either for the past, or for
 # the future, but it's a good enough approximation for now
+# FIXME: fix this soon
 currency_weight = {
     "USD": 84.31,
     "EUR": 88.59,
     "CAD": 59.76,
     "GBP": 105.82,
+    "ZAR": 84.31/19.46990, # as on 9 Apr 2025.
     "INR": 1,
 }
 
