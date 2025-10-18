@@ -202,14 +202,13 @@ def process_csv(csvfile):
             "manifest": manifest,
         }
 
-        # XXX FLOSS/fund may consider disabled manifests, so don't remove
-        # them for now.
+        # FLOSS/fund deos not consider disabled manifests, so remove them now
         # Don't process further if not active
-        #if status != "active":
-        #    # print(status, url)
-        #    disabled += 1
-        #    disabled_mdesc.append(this_mdesc)
-        #    continue
+        if status != "active":
+            print(status, url)
+            disabled += 1
+            disabled_mdesc.append(this_mdesc)
+            continue
 
         nfl = 0  # non-free-licenses
         mlic = {}
