@@ -216,13 +216,12 @@ if len(info.disabled_mdesc)>0:
     st.markdown('''
 FLOSS/fund internally implements a crawler that periodically updates
 manifests from their live location. If a manifest is inaccessible or
-invalid, it is disabled. There are %s disabled entities. These are:
+invalid, it is disabled. There are currently %d disabled entities.
 '''%(len(info.disabled_mdesc)))
-    mnames = []
-    for minfo in info.disabled_mdesc:
-        manifest = minfo["manifest"]
-        mnames.append(manifest["entity"]["name"])
-    st.dataframe({"Entity Name": mnames}, use_container_width=True)
+#    for minfo in info.disabled_mdesc:
+#        manifest = minfo["manifest"]
+#        mnames.append(manifest["entity"]["name"])
+#    st.dataframe({"Entity Name": mnames}, use_container_width=True)
 st.subheader('Project Info')
 st.markdown('''
 Details of this project are on
