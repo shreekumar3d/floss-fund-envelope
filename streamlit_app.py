@@ -136,7 +136,7 @@ FLOSS/fund is accepting projects. If you know any projects, please refer FLOSS/f
 to them.  Community and individual outreach can help more projects get the funds
 they need.
 ''')
-# st.divider()
+# st.write("---")
 
 st.write(
     """
@@ -181,7 +181,7 @@ for minfo in info.mdesc:
     manifest = minfo["manifest"]
     freq_ename.append(manifest["entity"]["name"])
 
-st.divider()
+st.write("---")
 st.subheader('Details of Entities')
 df = pd.DataFrame({"Entity Name": freq_ename, "Max Funding Requested (USD)": freq})
 st.write('''
@@ -202,7 +202,7 @@ for idx, minfo in enumerate(info.mdesc[:recent_count]):
     recent_fr.append(math.floor(mf))
     manifest = minfo["manifest"]
     recent_fr_name.append(manifest["entity"]["name"])
-st.divider()
+st.write("---")
 st.subheader('Recent Funding Requests')
 df = pd.DataFrame({"Entity Name": recent_fr_name, "Max Funding Requested (USD)": recent_fr})
 st.write(f'''
