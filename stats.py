@@ -40,6 +40,7 @@ currency_weight = {
     "ZAR": 84.31/19.46990, # as on 9 Apr 2025.
     "AUD": 56.61, # as on Aug 19 2025
     "MXN": 4.64, # as on Aug 19 2025
+    "CHF": 116.24, # as on Feb 2 2026
     "INR": 1,
 }
 
